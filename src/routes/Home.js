@@ -1,10 +1,7 @@
 import React from 'react';
-import Home from './routes/Home';
-import './App.css';
-import { HashRouter, Route } from 'react-router-dom';
-import About from './routes/About';
-import Navigation from './components/Navigation';
-import Detail from './routes/Detail';
+import axios from 'axios';
+import Movie from '../components/Movie';
+import './Home.css';
 
 /*import PropTypes from 'prop-types';
 
@@ -93,15 +90,60 @@ class App extends React.Component{
 export default App;
 */
 
-function App(){
-    return ( // Link와 Route 컴포넌트는 HashRouter 안에
-        <HashRouter>
-            <Navigation />
-            <Route path = "/" exact = {true} component = {Home} />     {/* exact를 통해 path props가 정확히 / 인 경우에 Home 컴포넌트만 출력 */}
-            <Route path = "/about" component = {About} />
-            <Route path = "/movie-detail" component = {Detail} />
-        </HashRouter>
-    );
+class Home extends React.Component{
+    state = {
+        isLoading: true,
+        movies: []
+    };
+
+    // async 와 await 는 동시에 사용해야 함
+    getMovies = async () => {
+        const {
+            data: {
+                data: { movies },
+            },
+        }= await axios.get('https://yts-proxy.now.sh/list_movies.json?sort_by=rating');
+        this.setState({ movies , isLoading: false});     // ES6에서는 객체의 키와 대입할 변수의 이름이 같다면 코드 축약 가능(= setState({ movies : movies}) )
+    }
+
+    componentDidMount(){
+        // 영화 데이터 로딩
+        /*
+        setTimeout(() => {
+            this.setState({ isLoading: false });
+        }, 6000);
+        */
+       this.getMovies();
+    }
+
+    // 리액트에서는 class가 아닌 className으로 씀 *( <label for = "name" 이 아닌 label htmlFor = "name" 으로 씀 )
+    render(){
+        const { isLoading, movies } = this.state;
+        return (
+        <section className ="container">
+            {isLoading ? (
+                <div className = "loader">
+                    <span className ="loader__text">Loading...</span>
+
+                </div>
+                ) : (
+                    <div className = "movies">
+                        { movies.map(movie => (
+                            <Movie
+                            key = {movie.id}        // 컴포넌트를 여러 개 출력할 때 유일한 값을 이용하여 key props 추가
+                            id = {movie.id}
+                            year = {movie.year}
+                            title = {movie.title}
+                            summary = {movie.summary}
+                            poster = {movie.medium_cover_image}
+                            genres = {movie.genres}
+                            />
+                        ))}
+                        </div>
+        )}
+        </section>
+        );
+    }
 }
 
-export default App;
+export default Home;
